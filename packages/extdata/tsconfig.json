@@ -1,0 +1,13 @@
+{
+  "extends": "../../config/tsconfig-common.json",
+  "compilerOptions": {
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "outDir": "types",
+    "checkJs": true,
+    "module": "nodenext",
+  },
+  "include": [
+    "./lib/**/*.mjs"
+  ]
+}

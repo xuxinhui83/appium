@@ -1,0 +1,47 @@
+{
+  "name": "@appium/extdata",
+  "version": "0.0.0",
+  "description": "",
+  "main": "lib/index.mjs",
+  "scripts": {},
+  "keywords": [
+    "automation",
+    "javascript",
+    "selenium",
+    "webdriver",
+    "ios",
+    "android",
+    "firefoxos",
+    "testing"
+  ],
+  "author": "https://github.com/appium",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@appium/support": "file:../support",
+    "colorette": "2.0.16",
+    "lodash": "4.17.21",
+    "log-symbols": "5.1.0",
+    "read-pkg": "7.0.0",
+    "resolve-from": "5.0.0",
+    "rfc6902": "4.0.2",
+    "semver": "7.3.5",
+    "yaml": "1.10.2",
+    "yargs": "17.3.0"
+  },
+  "bin": {
+    "appiumext": "./lib/cli.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/appium/appium.git"
+  },
+  "bugs": {
+    "url": "https://github.com/appium/appium/issues"
+  },
+  "homepage": "https://appium.io",
+  "engines": {
+    "node": ">=12",
+    "npm": ">=6"
+  },
+  "type": "module"
+}

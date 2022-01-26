@@ -1,3 +1,5 @@
+// @ts-check
+
 // transpile:mocha
 import _ from 'lodash';
 import path from 'path';
@@ -5,17 +7,20 @@ import B from 'bluebird';
 import { remote as wdio } from 'webdriverio';
 import axios from 'axios';
 import { main as appiumServer } from '../lib/main';
-import { DEFAULT_APPIUM_HOME, INSTALL_TYPE_LOCAL, DRIVER_TYPE, PLUGIN_TYPE } from '../lib/extension-config';
+import { INSTALL_TYPE_LOCAL } from '../lib/extension/extension-config';
 import { W3C_PREFIXED_CAPS, TEST_HOST, getTestPort, PROJECT_ROOT } from './helpers';
 import { runExtensionCommand } from '../lib/cli/extension';
-
+import { tempDir, fs } from '@appium/support';
+import { loadExtensions } from '../lib/extension';
 
 const FAKE_ARGS = {sillyWebServerPort: 1234, host: 'hey'};
 const FAKE_PLUGIN_ARGS = {fake: FAKE_ARGS};
 
+const should = chai.should();
+
+/** @type {WebdriverIO.RemoteOptions} */
 const wdOpts = {
   hostname: TEST_HOST,
-  port: null,
   connectionRetryCount: 0,
   capabilities: W3C_PREFIXED_CAPS,
 };
@@ -23,52 +28,64 @@ const wdOpts = {
 describe('FakePlugin', function () {
   const fakePluginDir = path.join(PROJECT_ROOT, 'node_modules', '@appium', 'fake-plugin');
   const fakeDriverDir = path.join(PROJECT_ROOT, 'packages', 'fake-driver');
-  const appiumHome = DEFAULT_APPIUM_HOME;
+  let appiumHome;
+  /** @type {Partial<import('../types/types').ParsedArgs>} */
   let baseArgs;
   let testServer;
-  let testPort;
+  let port;
   let baseUrl;
 
   before(async function () {
-    wdOpts.port = testPort = await getTestPort();
-    testServer = `http://${TEST_HOST}:${testPort}`;
+    appiumHome = await tempDir.openDir();
+    wdOpts.port = port = await getTestPort();
+    testServer = `http://${TEST_HOST}:${port}`;
     baseUrl = `${testServer}/session`;
+    const {driverConfig, pluginConfig} = await loadExtensions(appiumHome);
     // first ensure we have fakedriver installed
     const driverList = await runExtensionCommand({
-      appiumHome,
       driverCommand: 'list',
       showInstalled: true,
-    }, DRIVER_TYPE);
+    }, driverConfig
+    );
     if (!_.has(driverList, 'fake')) {
       await runExtensionCommand({
-        appiumHome,
         driverCommand: 'install',
         driver: fakeDriverDir,
         installType: INSTALL_TYPE_LOCAL,
-      }, DRIVER_TYPE);
+      }, driverConfig
+      );
     }
 
     const pluginList = await runExtensionCommand({
-      appiumHome,
       pluginCommand: 'list',
       showInstalled: true,
-    }, PLUGIN_TYPE);
+    }, pluginConfig);
     if (!_.has(pluginList, 'fake')) {
       await runExtensionCommand({
-        appiumHome,
         pluginCommand: 'install',
         plugin: fakePluginDir,
         installType: INSTALL_TYPE_LOCAL,
-      }, PLUGIN_TYPE);
+      }, pluginConfig);
     }
-    baseArgs = {port: testPort, host: TEST_HOST, appiumHome, usePlugins: ['fake'], useDrivers: ['fake']};
+    baseArgs = {
+      appiumHome,
+      port,
+      address: TEST_HOST,
+      usePlugins: ['fake'],
+      useDrivers: ['fake']
+    };
+  });
+
+  after(async function () {
+    await fs.rimraf(appiumHome);
   });
 
   describe('without plugin registered', function () {
     let server = null;
     before(async function () {
       // then start server if we need to
-      const args = {port: testPort, host: TEST_HOST, appiumHome, usePlugins: ['other1', 'other2']};
+      const args = {appiumHome, port, address: TEST_HOST, usePlugins: ['other1', 'other2']};
+      // @ts-expect-error
       server = await appiumServer(args);
     });
     after(async function () {
@@ -77,7 +94,7 @@ describe('FakePlugin', function () {
       }
     });
     it('should not update the server if plugin is not activated', async function () {
-      await axios.post(`http://${TEST_HOST}:${testPort}/fake`).should.eventually.be.rejectedWith(/404/);
+      await axios.post(`http://${TEST_HOST}:${port}/fake`).should.eventually.be.rejectedWith(/404/);
     });
     it('should not update method map if plugin is not activated', async function () {
       const driver = await wdio(wdOpts);
@@ -106,7 +123,8 @@ describe('FakePlugin', function () {
       before(async function () {
         // then start server if we need to
         const usePlugins = registrationType === 'explicit' ? ['fake', 'p2', 'p3'] : ['all'];
-        const args = {port: testPort, host: TEST_HOST, appiumHome, usePlugins, useDrivers: ['fake']};
+        const args = {appiumHome, port, address: TEST_HOST, usePlugins, useDrivers: ['fake']};
+        // @ts-expect-error
         server = await appiumServer(args);
       });
       after(async function () {
@@ -116,7 +134,7 @@ describe('FakePlugin', function () {
       });
       it('should update the server', async function () {
         const res = {fake: 'fakeResponse'};
-        (await axios.post(`http://${TEST_HOST}:${testPort}/fake`)).data.should.eql(res);
+        (await axios.post(`http://${TEST_HOST}:${port}/fake`)).data.should.eql(res);
       });
 
       it('should modify the method map with new commands', async function () {
@@ -165,15 +183,16 @@ describe('FakePlugin', function () {
       });
 
       it('should handle unexpected driver shutdown', async function () {
+        /** @type {WebdriverIO.RemoteOptions} */
         const newOpts = {...wdOpts};
-        newOpts.capabilities['appium:newCommandTimeout'] = 1;
-        const driver = await wdio(wdOpts);
+        newOpts.capabilities = {...newOpts.capabilities ?? {}, 'appium:newCommandTimeout': 1};
+        const driver = await wdio(newOpts);
         let shutdownErr;
         try {
-          let res = await axios.get(`http://${TEST_HOST}:${testPort}/unexpected`);
+          let res = await axios.get(`http://${TEST_HOST}:${port}/unexpected`);
           should.not.exist(res.data);
           await B.delay(1500);
-          res = await axios.get(`http://${TEST_HOST}:${testPort}/unexpected`);
+          res = await axios.get(`http://${TEST_HOST}:${port}/unexpected`);
           res.data.should.match(/Session ended/);
           res.data.should.match(/timeout/);
           await driver.deleteSession();
@@ -189,6 +208,7 @@ describe('FakePlugin', function () {
     before(async function () {
       // then start server if we need to
       const args = {...baseArgs, plugin: FAKE_PLUGIN_ARGS};
+      // @ts-expect-error
       server = await appiumServer(args);
     });
     after(async function () {
@@ -212,6 +232,7 @@ describe('FakePlugin', function () {
     let server = null;
     before(async function () {
       // then start server if we need to
+      // @ts-expect-error
       server = await appiumServer(baseArgs);
     });
     after(async function () {

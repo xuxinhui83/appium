@@ -4,6 +4,7 @@ import path from 'path';
 import semver from 'semver';
 import { exec } from 'teen_process';
 import { fs, mkdirp, util, system } from '@appium/support';
+import resolveFrom from 'resolve-from';
 
 const INSTALL_LOCKFILE = '.appium.install.lock';
 const LINK_LOCKFILE = '.appium.link.lock';
@@ -149,6 +150,7 @@ export default class NPM {
   async installPackage ({pkgDir, pkgName, pkgVer}) {
     const res = await this.exec('install', [
       '--no-save',
+      '--global-style',
       '--no-package-lock',
       pkgVer ? `${pkgName}@${pkgVer}` : pkgName
     ], {
@@ -169,13 +171,13 @@ export default class NPM {
     // everything got installed ok. Remember, pkgName might end up with a / in it due to an npm
     // org, so if so, that will get correctly exploded into multiple directories, by path.resolve here
     // (even on Windows!)
-    const pkgJson = path.resolve(pkgDir, 'node_modules', pkgName, 'package.json');
+    const pkgJsonPath = resolveFrom(this.appiumHome, `${pkgName}/package.json`);
     try {
-      return require(pkgJson);
+      return require(pkgJsonPath);
     } catch {
       throw new Error('The package was not downloaded correctly; its package.json ' +
                       'did not exist or was unreadable. We looked for it at ' +
-                      pkgJson);
+                      pkgJsonPath);
     }
   }
 
@@ -197,17 +199,20 @@ export default class NPM {
     // ie: "node . driver install --source=local ../fake-driver"
     pkgPath = path.resolve(process.cwd(), pkgPath);
 
-    const pkgHome = path.resolve(this.appiumHome, pkgName);
-
     // call link with --no-package-lock to ensure no corruption while installing local packages
-    const res = await this.exec('link', ['--no-package-lock', pkgPath], {cwd: pkgHome, lockFile: LINK_LOCKFILE});
+    const args = [
+      '--global-style',
+      '--no-package-lock',
+      pkgPath
+    ];
+    const res = await this.exec('link', args, {cwd: this.appiumHome, lockFile: LINK_LOCKFILE});
     if (res.json && res.json.error) {
       throw new Error(res.json.error);
     }
 
     // now ensure it was linked to the correct place
     try {
-      return require(path.resolve(pkgHome, 'node_modules', pkgName, 'package.json'));
+      return require(resolveFrom(this.appiumHome, `${pkgName}/package.json`));
     } catch {
       throw new Error('The package was not linked correctly; its package.json ' +
                       'did not exist or was unreadable');

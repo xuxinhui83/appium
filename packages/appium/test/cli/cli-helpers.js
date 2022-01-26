@@ -116,7 +116,7 @@ export const runAppiumJson = _.curry(
 export const installLocalExtension = _.curry(
   /**
    * @param {string} appiumHome
-   * @param {import('../../lib/ext-config-io').ExtensionType} type
+   * @param {import('../../lib/extension/manifest').ExtensionType} type
    * @param {string} pathToExtension
    * @returns {Promise<object>}
    */
@@ -141,6 +141,11 @@ export const installLocalExtension = _.curry(
 /**
  * Error thrown by all of the functions in this file which execute `appium`.
  * @typedef {Error & AppiumRunErrorProps & import('../../lib/cli/npm').TeenProcessExecErrorProps} AppiumRunError
+ */
+
+/**
+ * @typedef {import('../../lib/cli/npm').TeenProcessExecResult} TeenProcessExecResult
+ * @typedef {import('../../lib/cli/npm').TeenProcessExecError} TeenProcessExecError
  */
 
 /**

@@ -3,14 +3,14 @@
   "tasks": [
     {
       "type": "npm",
-      "script": "build",
+      "script": "dev",
       "group": {
         "kind": "build",
         "isDefault": true
       },
       "problemMatcher": [],
-      "label": "npm: build",
-      "detail": "lerna exec gulp transpile"
+      "label": "npm: dev",
+      "detail": "lerna exec --parallel gulp dev"
     },
     {
       "type": "shell",
@@ -140,11 +140,10 @@
     },
     {
       "type": "npm",
-      "script": "dev",
+      "script": "test:e2e:appium",
       "problemMatcher": [],
-      "isBackground": true,
-      "label": "npm: dev",
-      "detail": "lerna exec --parallel gulp dev"
+      "label": "npm: test:e2e:appium",
+      "detail": "lerna exec --scope=appium \"gulp e2e-test\""
     }
   ]
 }

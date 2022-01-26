@@ -1,9 +1,9 @@
 import {transformers} from '../lib/schema/cli-transformers';
-import {SERVER_SUBCOMMAND} from '../lib/cli/parser';
+import {SERVER_SUBCOMMAND} from '../lib/constants';
 import {
   DRIVER_TYPE as DRIVER_SUBCOMMAND,
   PLUGIN_TYPE as PLUGIN_SUBCOMMAND,
-} from '../lib/ext-config-io';
+} from '../lib/constants';
 import appiumConfigSchema from '../lib/schema/appium-config-schema';
 import {AppiumConfiguration, ServerConfig} from './appium-config';
 
@@ -124,7 +124,7 @@ type DefaultForProp<Prop extends keyof ServerConfigMapping> =
 /**
  * The final shape of the parsed CLI arguments.
  */
-type ParsedArgsFromConfig = {
+type ArgsFromConfig = {
   [Prop in keyof ServerConfigMapping as SetKeyForProp<Prop>]: DefaultForProp<Prop>;
 };
 
@@ -155,23 +155,53 @@ interface MoreArgs {
   /**
    * Path to config file, if any
    */
-  configFile: string;
+  configFile?: string;
 
   /**
    * If true, show the build info and exit
    */
-  showConfig: boolean;
+  showConfig?: boolean;
 
   /**
    * If true, open a REPL
    */
-  shell: boolean;
+  shell?: boolean;
+
 
   /**
-   * If true, throw on error instead of exit. Not supported via CLI, but rather
-   * only programmatic usage.
+   * Subcommands of `driver` subcommand
    */
-  throwInsteadOfExit: boolean;
+  driverCommand?: CliExtensionSubcommands;
+
+  /**
+   * Subcommands of `plugin` subcommand
+   */
+  pluginCommand?: CliExtensionSubcommands;
+  
+}
+/**
+ * These arguments are _not_ supported by the CLI, but only via programmatic usage / tests.
+ */
+interface ProgrammaticArgs {
+
+  /**
+   * If true, throw on error instead of exit. 
+   */
+  throwInsteadOfExit?: boolean;
+
+  /**
+   * Seems to only be used in tests or standalone driver calls
+   */
+  logHandler?: (...args: any[]) => void;
+
+  /**
+   * Alternate way to set APPIUM_HOME for tests. Since we don't want to muck about
+   * with the environment, we just set it here.
+   */
+  appiumHome?: string;
+}
+
+interface SubcommandArgs {
 
   /**
    * Possible subcommands
@@ -181,16 +211,12 @@ interface MoreArgs {
     | typeof PLUGIN_SUBCOMMAND
     | typeof SERVER_SUBCOMMAND;
 
-  /**
-   * Subcommands of `driver` subcommand
-   */
-  driverCommand: CliExtensionSubcommands;
-
-  /**
-   * Subcommands of `plugin` subcommand
-   */
-  pluginCommand: CliExtensionSubcommands;
 }
+
+/** 
+ * The same as {@link ParsedArgs} but with a nullable `subcommand`.
+ */
+ export type PartialArgs = ArgsFromConfig & MoreArgs & ProgrammaticArgs & Partial<SubcommandArgs>;
 
 /**
  * The Appium configuration as a flattened object, parsed via CLI args _and_ any
@@ -198,4 +224,4 @@ interface MoreArgs {
  * @todo Does not make any assumptions about property names derived from
  * extensions.
  */
-export type ParsedArgs = ParsedArgsFromConfig & Partial<MoreArgs>;
+export type ParsedArgs = ArgsFromConfig & MoreArgs & ProgrammaticArgs & SubcommandArgs;

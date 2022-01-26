@@ -1,3 +1,4 @@
+// @ts-check
 // transpile:mocha
 
 import _ from 'lodash';
@@ -6,69 +7,83 @@ import B from 'bluebird';
 import axios from 'axios';
 import { remote as wdio } from 'webdriverio';
 import { main as appiumServer } from '../lib/main';
-import { DEFAULT_APPIUM_HOME, INSTALL_TYPE_LOCAL, DRIVER_TYPE } from '../lib/extension-config';
+import { INSTALL_TYPE_LOCAL } from '../lib/extension/extension-config';
 import { W3C_PREFIXED_CAPS, TEST_FAKE_APP, TEST_HOST, getTestPort, PROJECT_ROOT } from './helpers';
 import { BaseDriver } from '@appium/base-driver';
-import DriverConfig from '../lib/driver-config';
+import { loadExtensions } from '../lib/extension';
 import { runExtensionCommand } from '../lib/cli/extension';
 import { removeAppiumPrefixes } from '../lib/utils';
 import sinon from 'sinon';
+import { tempDir, fs } from '@appium/support';
 
+const should = chai.should();
 
-let TEST_SERVER;
-let TEST_PORT;
+/** @type {string} */
+let testServerUrl;
+
+/** @type {number} */
+let port;
+
 const sillyWebServerPort = 1234;
 const sillyWebServerHost = 'hey';
 const FAKE_ARGS = {sillyWebServerPort, sillyWebServerHost};
 const FAKE_DRIVER_ARGS = {driver: {fake: FAKE_ARGS}};
 const shouldStartServer = process.env.USE_RUNNING_SERVER !== '0';
 const caps = W3C_PREFIXED_CAPS;
+const FAKE_DRIVER_DIR = path.join(PROJECT_ROOT, 'packages', 'fake-driver');
+
+/** @type {WebdriverIO.RemoteOptions} */
 const wdOpts = {
   hostname: TEST_HOST,
-  port: null,
   connectionRetryCount: 0,
 };
 
 describe('FakeDriver - via HTTP', function () {
   let server = null;
-  const appiumHome = DEFAULT_APPIUM_HOME;
+  let appiumHome;
   // since we update the FakeDriver.prototype below, make sure we update the FakeDriver which is
   // actually going to be required by Appium
   let FakeDriver = null;
   let baseUrl;
-  const FAKE_DRIVER_DIR = path.join(PROJECT_ROOT, 'packages', 'fake-driver');
+
   before(async function () {
-    wdOpts.port = TEST_PORT = await getTestPort();
-    TEST_SERVER = `http://${TEST_HOST}:${TEST_PORT}`;
-    baseUrl = `${TEST_SERVER}/session`;
+    appiumHome = await tempDir.openDir();
+    wdOpts.port = port = await getTestPort();
+    testServerUrl = `http://${TEST_HOST}:${port}`;
+    baseUrl = `${testServerUrl}/session`;
     // first ensure we have fakedriver installed
+    const {driverConfig} = await loadExtensions(appiumHome);
     const driverList = await runExtensionCommand({
-      appiumHome,
       driverCommand: 'list',
       showInstalled: true,
-    }, DRIVER_TYPE);
+    }, driverConfig);
     if (!_.has(driverList, 'fake')) {
       await runExtensionCommand({
-        appiumHome,
         driverCommand: 'install',
         driver: FAKE_DRIVER_DIR,
         installType: INSTALL_TYPE_LOCAL,
-      }, DRIVER_TYPE);
+      }, driverConfig);
     }
 
-    const config = DriverConfig.getInstance(appiumHome);
-    FakeDriver = config.require('fake');
+    FakeDriver = driverConfig.require('fake');
     // then start server if we need to
-    await serverStart();
+    await serverStart(port, {appiumHome});
   });
 
   after(async function () {
     await serverClose();
+    await fs.rimraf(appiumHome);
   });
 
-  async function serverStart (args = {}) {
-    args = {port: TEST_PORT, host: TEST_HOST, appiumHome, ...args};
+  /**
+   *
+   * @param {number} port
+   * @param {Partial<import('../types/types').ParsedArgs>} [args]
+   */
+  async function serverStart (port, args = {}) {
+    args = {...args, port, address: TEST_HOST};
     if (shouldStartServer) {
+      // @ts-expect-error
       server = await appiumServer(args);
     }
   }
@@ -81,7 +96,7 @@ describe('FakeDriver - via HTTP', function () {
 
   describe('server updating', function () {
     it('should allow drivers to update the server in arbitrary ways', async function () {
-      const {data} = await axios.get(`${TEST_SERVER}/fakedriver`);
+      const {data} = await axios.get(`${testServerUrl}/fakedriver`);
       data.should.eql({fakedriver: 'fakeResponse'});
     });
   });
@@ -103,11 +118,13 @@ describe('FakeDriver - via HTTP', function () {
   describe('cli args handling for passed in args', function () {
     before(async function () {
       await serverClose();
-      await serverStart(FAKE_DRIVER_ARGS);
+      await serverStart(port, {appiumHome, ...FAKE_DRIVER_ARGS});
     });
     after(async function () {
       await serverClose();
-      await serverStart();
+      // this weirdness here is to restart the same server which was originally started in the parent suite's
+      // "before all" hook.  another way of doing this would be to just...not nest suites this way.
+      await serverStart(port, {appiumHome});
     });
     it('should receive user cli args from a driver if arguments were passed in', async function () {
       let driver = await wdio({...wdOpts, capabilities: caps});
@@ -342,14 +359,13 @@ describe.skip('Logsink', function () {
     logs.push([level, message]);
   };
   let args = {
-    port: TEST_PORT,
-    host: TEST_HOST,
-    appiumHome: DEFAULT_APPIUM_HOME,
+    port,
+    address: TEST_HOST,
     logHandler,
   };
 
   before(async function () {
-    server = await appiumServer(args);
+    server = await appiumServer(/** @type {import('../types/types').ParsedArgs} */(args));
   });
 
   after(async function () {

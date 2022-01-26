@@ -1,7 +1,7 @@
 // transpile:mocha
 
 import { getParser } from '../lib/cli/parser';
-import { INSTALL_TYPES } from '../lib/extension-config';
+import { INSTALL_TYPES } from '../lib/extension/extension-config';
 import * as schema from '../lib/schema/schema';
 import { readConfigFile } from '../lib/config-file';
 import { resolveFixture } from './helpers';
@@ -194,6 +194,10 @@ describe('parser', function () {
   });
 
   describe('Driver Parser', function () {
+    let p;
+    beforeEach(async function () {
+      p = await getParser(true);
+    });
     it('should not allow random sub-subcommands', function () {
       (() => p.parseArgs(['driver', 'foo'])).should.throw();
     });

@@ -14,7 +14,7 @@ describe('env', function () {
   let sandbox;
 
   /**
-   * @type { {'read-pkg': SinonStub<any[],Promise<any>>, 'resolve-from': SinonStub<any[],string>} }
+   * @type { {'read-pkg': SinonStub<any[],Promise<any>>, 'resolve-from': SinonStub<any[],string>, '../lib/fs.js':  { exists: SinonStub<any[],Promise<boolean>> } } }
    */
   let mocks;
 
@@ -36,16 +36,30 @@ describe('env', function () {
     pkg = {};
     mocks = {
       'read-pkg': sandbox.stub().resolves(pkg),
-      'resolve-from': sandbox.stub().returns('/some/path/to/package.json')
+      'resolve-from': sandbox.stub().returns('/some/path/to/package.json'),
+      '../lib/fs.js': {
+        exists: sandbox.stub().resolves(false)
+      }
     };
     env = rewiremock.proxy(() => require('../lib/env'), mocks);
   });
 
 
-  describe('getManifestPath()', function () {
+  describe('resolveManifestPath()', function () {
     describe('when appium is located relative to cwd', function () {
       it('should return a path relative to cwd', async function () {
-        expect(await env.getManifestPath()).to.equal(path.join(process.cwd(), env.LOCAL_RELATIVE_MANIFEST_PATH));
+        expect(await env.resolveManifestPath()).to.equal(path.join(process.cwd(), env.LOCAL_RELATIVE_MANIFEST_PATH));
+      });
+
+      describe('when a manifest file exists in the default APPIUM_HOME', function () {
+        beforeEach(function () {
+          mocks['../lib/fs.js'].exists.resolves(true);
+        });
+
+        // this is for backwards compat with people having existing setups!
+        it('should return a path relative to the default APPIUM_HOME', async function () {
+          expect(await env.resolveManifestPath()).to.equal(path.join(env.DEFAULT_APPIUM_HOME, env.MANIFEST_BASENAME));
+        });
       });
     });
 
@@ -55,7 +69,29 @@ describe('env', function () {
       });
 
       it('should return a path relative to the default APPIUM_HOME', async function () {
-        expect(await env.getManifestPath()).to.equal(path.join(process.cwd(), env.MANIFEST_BASENAME));
+        expect(await env.resolveManifestPath()).to.equal(path.join(env.DEFAULT_APPIUM_HOME, env.MANIFEST_BASENAME));
+      });
+    });
+
+    describe('when provided an explicit APPIUM_HOME', function () {
+      describe('when a manifest file exists there', function () {
+        beforeEach(function () {
+          mocks['../lib/fs.js'].exists.resolves(true);
+        });
+
+        it('it should return the existing path', async function () {
+          expect(await env.resolveManifestPath('/somewhere/over/the/rainbow')).to.equal(path.join('/somewhere/over/the/rainbow', env.MANIFEST_BASENAME));
+        });
+      });
+    });
+
+    describe('when package.json cannot be read', function () {
+      beforeEach(function () {
+        mocks['read-pkg'].rejects(new Error());
+      });
+
+      it('should return path relative to resolved APPIUM_HOME', async function () {
+        expect(await env.resolveManifestPath()).to.equal(path.join(env.DEFAULT_APPIUM_HOME, env.MANIFEST_BASENAME));
       });
     });
   });

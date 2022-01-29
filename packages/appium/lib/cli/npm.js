@@ -231,6 +231,7 @@ export default class NPM {
   }
 }
 
+// THESE TYEPS SHOULD BE IN TEEN PROCESS, NOT HERE
 
 /**
  * Result from a non-zero-exit execution of `appium`

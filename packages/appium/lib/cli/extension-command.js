@@ -154,12 +154,12 @@ export default class ExtensionCommand {
    * Install an extension
    *
    * @param {InstallArgs} args
-   * @return {Promise<object>} map of all installed extension names to extension data
+   * @return {Promise<ExtRecord<ExtType>>} map of all installed extension names to extension data
    */
   async install ({ext, installType, packageName}) {
     log(this.isJsonOutput, `Attempting to find and install ${this.type} '${ext}' via "${installType}" strategy`);
 
-    /** @type {import('../extension/manifest').ExtRecord<ExtType>} */
+    /** @type {ExtData<ExtType>} */
     let extData;
     let installSpec = ext;
 
@@ -230,8 +230,8 @@ export default class ExtensionCommand {
       extData = await this.installViaNpm({ext, pkgName, pkgVer});
     }
 
-    const extName = extData[`${this.type}Name`];
-    delete extData[`${this.type}Name`];
+    const extName = extData[/** @type {string} */(`${this.type}Name`)];
+    delete extData[/** @type {string} */(`${this.type}Name`)];
 
     if (this.config.isInstalled(extName)) {
       throw new Error(`A ${this.type} named '${extName}' is already installed. ` +
@@ -260,6 +260,7 @@ export default class ExtensionCommand {
    * Install an extension via NPM
    *
    * @param {InstallViaNpmArgs} args
+   * @returns {Promise<ExtData<ExtType>>}
    */
   async installViaNpm ({ext, pkgName, pkgVer}) {
     const npmSpec = `${pkgName}${pkgVer ? '@' + pkgVer : ''}`;
@@ -328,7 +329,7 @@ export default class ExtensionCommand {
    * Uninstall an extension
    *
    * @param {UninstallOpts} opts
-   * @return {Promise<import('../extension/manifest').ExtRecord<ExtType>>} map of all installed extension names to extension data
+   * @return {Promise<ExtRecord<ExtType>>} map of all installed extension names to extension data
    */
   async uninstall ({ext}) {
     if (!this.config.isInstalled(ext)) {
@@ -464,7 +465,7 @@ export default class ExtensionCommand {
     const {pkgName} = this.config.installedExtensions[ext];
     await fs.rimraf(this.config.getInstallPath(ext));
     const extData = await this.installViaNpm({ext, pkgName, pkgVer: version});
-    delete extData[`${this.type}Name`];
+    delete extData[/** @type {string} */(`${this.type}Name`)];
     await this.config.updateExtension(ext, extData);
   }
 
@@ -564,6 +565,16 @@ export default class ExtensionCommand {
  */
 
 /**
+ * @template {ExtensionType} ExtType
+ * @typedef {import('../extension/manifest').ExtRecord<ExtType>} ExtRecord
+ */
+
+/**
+ * @template {ExtensionType} ExtType
+ * @typedef {import('../extension/manifest').ExtData<ExtType>} ExtData
+ */
+
+/**
  * Return value of {@link ExtensionCommand#list}.
  * @typedef {Record<string, Partial<import('../extension/manifest').InternalData> & ExtensionMetadata>} ListData
  */
@@ -602,7 +613,6 @@ export default class ExtensionCommand {
  * @typedef {Object} UninstallOpts
  * @property {string} ext - the name or spec of an extension to uninstall
  */
-
 
 /**
  * Used by {@link ExtensionCommand#getPostInstallText}

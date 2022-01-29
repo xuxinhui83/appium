@@ -6,6 +6,9 @@ const REQ_DRIVER_FIELDS = ['driverName', 'automationName', 'platformNames', 'mai
 
 export default class DriverCommand extends ExtensionCommand {
 
+  /**
+   * @param {DriverCommandOptions} opts
+   */
   constructor ({config, json}) {
     super({config, json, type: DRIVER_TYPE});
     this.knownExtensions = KNOWN_DRIVERS;
@@ -46,3 +49,9 @@ export default class DriverCommand extends ExtensionCommand {
   }
 
 }
+
+/**
+ * @typedef {Object} DriverCommandOptions
+ * @property {import('../extension/driver-config').DriverConfig} config
+ * @property {boolean} json
+ */

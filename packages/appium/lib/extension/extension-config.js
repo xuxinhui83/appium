@@ -27,10 +27,10 @@ const INSTALL_TYPES = [
  * @template {ExtensionType} ExtType
  */
 export class ExtensionConfig {
-  /** @type {Readonly<ExtType>} */
+  /** @type {ExtType} */
   extensionType;
 
-  /** @type {Readonly<`${ExtType}s`>} */
+  /** @type {`${ExtType}s`} */
   configKey;
 
   /** @type {ExtRecord<ExtType>} */
@@ -39,7 +39,7 @@ export class ExtensionConfig {
   /** @type {ExtensionLogFn} */
   log;
 
-  /** @type {Readonly<import('./manifest').Manifest>} */
+  /** @type {import('./manifest').Manifest} */
   io;
 
   /**

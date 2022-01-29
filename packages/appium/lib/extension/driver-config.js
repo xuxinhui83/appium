@@ -197,7 +197,7 @@ export class DriverConfig extends ExtensionConfig {
  */
 
 /**
- * @typedef {import('./manifest').ExternalDriverData} ExternalDriverData
+ * @typedef {import('./manifest').ExternalData<DriverType>} ExternalDriverData
  * @typedef {import('./manifest').ManifestDriverData} ManifestDriverData
  * @typedef {import('./manifest').ManifestData} Manifest
  * @typedef {import('./manifest').DriverType} DriverType

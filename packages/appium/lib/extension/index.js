@@ -2,7 +2,6 @@
 
 import _ from 'lodash';
 import log from '../logger';
-import { env } from '@appium/support';
 import { USE_ALL_PLUGINS } from '../constants';
 import { getManifestInstance } from './manifest';
 import { DriverConfig } from './driver-config';
@@ -17,8 +16,7 @@ import { PluginConfig } from './plugin-config';
  * @param {string} [appiumHome]
  * @returns {Promise<ExtensionConfigs>}
  */
-export async function loadExtensions (appiumHome = env.DEFAULT_APPIUM_HOME) {
-  log.debug(`Loading extensions from ${appiumHome}`);
+export async function loadExtensions (appiumHome) {
   const io = getManifestInstance(appiumHome);
   const {drivers, plugins} = await io.read();
   const driverConfig = DriverConfig.create(io, {extData: drivers});

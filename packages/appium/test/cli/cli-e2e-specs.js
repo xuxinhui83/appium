@@ -15,7 +15,7 @@ describe('CLI behavior', function () {
    */
   let appiumHome;
 
-  describe('npm-able extensions', function () {
+  describe('when appium is a dependency', function () {
 
     /**
      * @type {(args: string[]) => Promise<import('../../lib/cli/npm').TeenProcessExecResult>}
@@ -27,13 +27,13 @@ describe('CLI behavior', function () {
       run = runAppiumJson(appiumHome);
       // an example package.json referencing appium dependency
       await fs.copyFile(
-        path.join(__dirname, 'fixtures', 'local-appium.package.json'),
+        require.resolve('./fixtures/local-appium.package.json'),
         path.join(appiumHome, 'package.json')
       );
     });
 
     describe('without drivers installed', function () {
-      it('should find no drivers', async function () {
+      it('should list no drivers', async function () {
         const res = await run(['driver', 'list']);
         res.should.satisfy(
           /**
@@ -53,6 +53,11 @@ describe('CLI behavior', function () {
         await run(['driver', 'uninstall', 'fake']);
       });
 
+      it('should list the driver', async function () {
+        const res = await run(['driver', 'list']);
+        res.should.have.property('fake');
+      });
+
       it('should be resolvable from the local directory', function () {
         (() => resolveFrom(appiumHome, '@appium/fake-driver/package.json')).should.not.throw();
       });
@@ -60,6 +65,12 @@ describe('CLI behavior', function () {
 
     afterEach(async function () {
       await fs.rimraf(appiumHome);
+    });
+
+    describe('when a driver is installed via npm', function () {
+      it('should list the driver', async function () {
+
+      });
     });
   });
 

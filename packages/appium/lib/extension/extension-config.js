@@ -52,7 +52,7 @@ export class ExtensionConfig {
     const logger = _.isFunction(logFn) ? logFn : log.error.bind(log);
     this.extensionType = extensionType;
     this.configKey = `${extensionType}s`;
-    this.installedExtensions = io[this.configKey];
+    this.installedExtensions = io.getExtensionData(extensionType);
     this.log = logger;
     this.io = io;
   }
@@ -230,11 +230,10 @@ export class ExtensionConfig {
   /**
    * @param {string} extName
    * @param {ExtData<ExtType>} extData
-   * @returns {Promise<void>}
+   * @returns {Promise<boolean>}
    */
   async addExtension (extName, extData) {
-    this.installedExtensions[extName] = extData;
-    await this.io.write();
+    return await this.io.addExtension(this.extensionType, extName, extData);
   }
 
   /**

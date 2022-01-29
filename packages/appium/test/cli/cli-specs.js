@@ -17,9 +17,13 @@ describe('DriverCommand', function () {
   const pkgName = '@appium/fake-driver';
   let dc;
 
+  let sandbox;
+
   beforeEach(async function () {
+    sandbox = sinon.createSandbox();
     appiumHome = await tempDir.openDir();
     getManifestInstance.cache = new Map();
+    sandbox.stub(fs, 'exists').resolves(false);
     config = (await loadExtensions(appiumHome)).driverConfig;
     config.installedExtensions = {[driver]: {version: '1.0.0', pkgName}};
     dc = new DriverCommand({config, json: true});
@@ -27,6 +31,7 @@ describe('DriverCommand', function () {
 
   afterEach(async function () {
     await fs.rimraf(appiumHome);
+    sandbox.restore();
   });
 
   describe('#checkForExtensionUpdate', function () {

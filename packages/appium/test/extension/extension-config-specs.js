@@ -32,11 +32,13 @@ describe('ExtensionConfig', function () {
   let mocks;
   beforeEach(function () {
     sandbox = sinon.createSandbox();
-    manifest = /** @type {import('../../lib/extension/manifest').Manifest} */({
+    // @ts-expect-error
+    manifest = {
       get appiumHome () {
         return '/tmp/';
-      }
-    });
+      },
+      getExtensionData: sandbox.stub().returns({})
+    };
     mocks = {
       'resolve-from': sandbox.stub().callsFake((cwd, id) => path.join(cwd, id)),
       '@appium/support': {
@@ -46,7 +48,7 @@ describe('ExtensionConfig', function () {
         },
         mkdirp: sandbox.stub().resolves(),
         env: {
-          getManifestPath: sandbox.stub().resolves(manifestPath)
+          resolveManifestPath: sandbox.stub().resolves(manifestPath)
         },
         logger: {
           getLogger: sandbox.stub().returns(console)

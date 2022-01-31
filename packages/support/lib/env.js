@@ -5,27 +5,24 @@ import { homedir } from 'os';
 import path from 'path';
 import readPackage from 'read-pkg';
 import resolveFrom from 'resolve-from';
-import fs from './fs';
 
 /**
+ * Path to the default `APPIUM_HOME` dir (`~/.appium`).
  * @type {string}
  */
 export const DEFAULT_APPIUM_HOME = path.resolve(homedir(), '.appium');
 
 /**
+ * Basename of extension manifest file.
  * @type {string}
  */
 export const MANIFEST_BASENAME = 'extensions.yaml';
 
 /**
- * Path to manifest when `$APPIUM_HOME` contains a Node.js project.
+ * Relative path to extension manifest file from `APPIUM_HOME`.
+ * @type {string}
  */
-export const LOCAL_RELATIVE_MANIFEST_PATH = path.join(
-  'node_modules',
-  '.cache',
-  'appium',
-  MANIFEST_BASENAME,
-);
+export const MANIFEST_RELATIVE_PATH = path.join('node_modules', '.cache', 'appium', MANIFEST_BASENAME);
 
 /**
  * Finds an installation of `appium` in some directory.
@@ -101,12 +98,9 @@ export const resolveAppiumHome = _.memoize(
     if (cwd && !path.isAbsolute(cwd)) {
       throw new TypeError('Path to cwd must be absolute');
     }
+
     if (process.env.APPIUM_HOME) {
       return process.env.APPIUM_HOME;
-    }
-
-    if (await manifestExists()) {
-      return DEFAULT_APPIUM_HOME;
     }
 
     try {
@@ -122,45 +116,15 @@ export const resolveAppiumHome = _.memoize(
 );
 
 /**
- * Resolves `true` if there's an `extensions.yaml` in `appiumHome`
+ * Figure out manifest path based on `appiumHome``.
+ *
  * @param {string} [appiumHome] - Appium home directory
- * @returns {Promise<boolean>}
+ * @returns {Promise<string>}
  */
-async function manifestExists (appiumHome = DEFAULT_APPIUM_HOME) {
-  return await fs.exists(path.join(appiumHome, MANIFEST_BASENAME));
+export async function resolveManifestPath (appiumHome) {
+  appiumHome = appiumHome ?? await resolveAppiumHome();
+  return path.join(appiumHome, MANIFEST_RELATIVE_PATH);
 }
-
-/**
- * Figure out manifest path based on options.
- * - If `appiumHome` provided and manifest exists, use it
- * - If manifest exists in `DEFAULT_APPIUM_HOME`, use this
- * - Use `appiumHome` (or resolve it) and determine if `appium` is installed locally; if so, use local `node_modules/.cache/appium/extensions.yaml`
- * - Otherwise, use `appiumHome`
- */
-export const resolveManifestPath = _.memoize(
-  /**
-   * @param {string} [appiumHome] - Appium home directory
-   * @returns {Promise<string>}
-   */
-  async (appiumHome) => {
-    if (appiumHome && await manifestExists(appiumHome)) {
-      return path.join(appiumHome, MANIFEST_BASENAME);
-    }
-    if (await manifestExists()) {
-      return path.join(DEFAULT_APPIUM_HOME, MANIFEST_BASENAME);
-    }
-    appiumHome = appiumHome ?? await resolveAppiumHome();
-    try {
-      const pkg = await readPackageInDir(appiumHome);
-      const status = await getLocalAppiumInfo(pkg, appiumHome);
-      return status.hasLocalInstall || status.dependencyVersion
-        ? path.join(appiumHome, LOCAL_RELATIVE_MANIFEST_PATH)
-        : path.join(appiumHome, MANIFEST_BASENAME);
-    } catch {
-      return path.join(appiumHome, MANIFEST_BASENAME);
-    }
-  },
-);
 
 /**
  * Some metadata about an Appium installation.

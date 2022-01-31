@@ -48,18 +48,7 @@ describe('env', function () {
   describe('resolveManifestPath()', function () {
     describe('when appium is located relative to cwd', function () {
       it('should return a path relative to cwd', async function () {
-        expect(await env.resolveManifestPath()).to.equal(path.join(process.cwd(), env.LOCAL_RELATIVE_MANIFEST_PATH));
-      });
-
-      describe('when a manifest file exists in the default APPIUM_HOME', function () {
-        beforeEach(function () {
-          mocks['../lib/fs.js'].exists.resolves(true);
-        });
-
-        // this is for backwards compat with people having existing setups!
-        it('should return a path relative to the default APPIUM_HOME', async function () {
-          expect(await env.resolveManifestPath()).to.equal(path.join(env.DEFAULT_APPIUM_HOME, env.MANIFEST_BASENAME));
-        });
+        expect(await env.resolveManifestPath()).to.equal(path.join(process.cwd(), env.MANIFEST_RELATIVE_PATH));
       });
     });
 
@@ -69,7 +58,7 @@ describe('env', function () {
       });
 
       it('should return a path relative to the default APPIUM_HOME', async function () {
-        expect(await env.resolveManifestPath()).to.equal(path.join(env.DEFAULT_APPIUM_HOME, env.MANIFEST_BASENAME));
+        expect(await env.resolveManifestPath()).to.equal(path.join(env.DEFAULT_APPIUM_HOME, env.MANIFEST_RELATIVE_PATH));
       });
     });
 
@@ -80,7 +69,7 @@ describe('env', function () {
         });
 
         it('it should return the existing path', async function () {
-          expect(await env.resolveManifestPath('/somewhere/over/the/rainbow')).to.equal(path.join('/somewhere/over/the/rainbow', env.MANIFEST_BASENAME));
+          expect(await env.resolveManifestPath('/somewhere/over/the/rainbow')).to.equal(path.join('/somewhere/over/the/rainbow', env.MANIFEST_RELATIVE_PATH));
         });
       });
     });
@@ -91,7 +80,7 @@ describe('env', function () {
       });
 
       it('should return path relative to resolved APPIUM_HOME', async function () {
-        expect(await env.resolveManifestPath()).to.equal(path.join(env.DEFAULT_APPIUM_HOME, env.MANIFEST_BASENAME));
+        expect(await env.resolveManifestPath()).to.equal(path.join(env.DEFAULT_APPIUM_HOME, env.MANIFEST_RELATIVE_PATH));
       });
     });
   });

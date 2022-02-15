@@ -221,7 +221,7 @@ export default class NPM {
       '--no-package-lock',
       pkgPath
     ];
-    const res = await this.exec('link', args, {cwd: this.appiumHome, lockFile: this.linkLockfilePath});
+    const res = await this.exec('install', args, {cwd: this.appiumHome, lockFile: this.linkLockfilePath});
     if (res.json && res.json.error) {
       throw new Error(res.json.error);
     }

@@ -329,7 +329,7 @@ async function main (args) {
 }
 
 // NOTE: this is here for backwards compat for any scripts referencing `main.js` directly
-// (more specifically, `build/lib/main.js`)
+// (more specifically, `build/main.js`)
 // the executable is now `../index.js`, so that module will typically be `require.main`.
 if (require.main === module) {
   asyncify(main);

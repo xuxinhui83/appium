@@ -9,6 +9,18 @@
     {
       "files": "packages/*/test/**/*",
       "rules": { "func-names": "off" }
+    },
+    {
+      "files": "./packages/*/scripts/**/*.js",
+      "parserOptions": {
+        "sourceType": "script"
+      }
+    },
+    {
+      "files": "./scripts/**/*.js",
+      "parserOptions": {
+        "sourceType": "script"
+      }
     }
   ]
 }

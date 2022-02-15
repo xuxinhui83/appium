@@ -1,4 +1,5 @@
 'use strict';
+
 /**
  * Mocha will load this file to configure the environment to use Chai as the
  * assertion library. Since Chai is a singleton, we can run into problems when
@@ -12,6 +13,11 @@
  *
  * @module
  */
+
+// This configures @babel/register to look for a babel config in parent dir(s) of
+// wherever the tests are run.  This is required if running tests in a package dir
+// instead of the monorepo root.
+require('@babel/register')({rootMode: 'upward'});
 
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');

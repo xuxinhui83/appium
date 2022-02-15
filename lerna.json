@@ -1,7 +1,7 @@
 {
   "command": {
     "exec": {
-      "ignore": "@appium/eslint-config-appium"
+      "ignore": ["@appium/eslint-config-appium", "appium"]
     },
     "version": {
       "conventionalCommits": true,

@@ -12,7 +12,7 @@
   ],
   "plugins": ["source-map-support", "@babel/plugin-transform-runtime"],
   "comments": false,
-  "sourceMaps": "both",
+  "sourceMaps": "inline",
   "env": {
     "coverage": {
       "plugins": [

@@ -14,10 +14,13 @@ module.exports = (wallaby) => {
       './packages/**/*.json',
       '!./packages/**/build/**',
       '!./packages/**/test/**/*-specs.js',
+      '!./packages/**/test/**/*.spec.js',
       '!./packages/*/node_modules/**',
       '!./packages/*/gulpfile.js',
+      '!./packages/*/scripts/**',
       './packages/*/test/**/fixtures/**/*',
-      './packages/appium/test/extension/mocks.js',
+      './packages/*/test/**/unit/mocks.js',
+      './packages/*/test/helpers.js',
       // below this are fixtures
       {
         binary: true,
@@ -35,6 +38,7 @@ module.exports = (wallaby) => {
         instrument: false,
         pattern: './packages/gulp-plugins/build/**/*',
       },
+      // this setup file is special
       {
         instrument: false,
         pattern: './test/setup.js'
@@ -43,6 +47,7 @@ module.exports = (wallaby) => {
     testFramework: 'mocha',
     tests: [
       './packages/*/test/**/*-specs.js',
+      './packages/*/test/unit/**/*.spec.js',
       '!./packages/*/test/**/*-e2e-specs.js',
       '!./packages/*/node_modules/**',
       // this is more of an E2E test and it's tedious to run

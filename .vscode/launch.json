@@ -2,11 +2,19 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Current File (as script)",
+      "program": "${file}",
+      "request": "launch",
+      "skipFiles": ["<node_internals>/**"],
+      "type": "pwa-node",
+      "sourceMaps": true,
+      "autoAttachChildProcesses": true
+    },
+    {
       "args": ["--colors", "--timeout", "0", "${file}"],
       "internalConsoleOptions": "openOnSessionStart",
       "name": "Test - Current File",
-      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
-      "runtimeArgs": ["--require", "@babel/register"],
+      "program": "${workspaceFolder}/node_modules/.bin/mocha",
       "request": "launch",
       "skipFiles": ["<node_internals>/**", "**/node_modules/mocha/**"],
       "type": "pwa-node",
@@ -16,8 +24,8 @@
       "env": {
         "NODE_ENV": "test",
         "BABEL_ENV": "test"
-      },
-      "autoAttachChildProcesses": true,
+      }
+      "autoAttachChildProcesses": true
     }
   ]
 }

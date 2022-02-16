@@ -5,7 +5,7 @@
 /* eslint-disable no-console */
 
 const path = require('path');
-const {writeFile} = require('fs/promises');
+const {writeFile} = require('fs').promises;
 const {exec} = require('teen_process');
 
 const PKG_ROOT = path.join(__dirname, '..');

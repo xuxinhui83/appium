@@ -8,7 +8,7 @@
 const {exec} = require('teen_process');
 const {compileFromFile} = require('json-schema-to-typescript');
 const path = require('path');
-const fs = require('fs/promises');
+const {promises: fs} = require('fs');
 
 /**
  * Must be the `appium` package dir; not monorepo root.
